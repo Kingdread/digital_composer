@@ -17,7 +17,7 @@ This is my first experiment with Rust, so the code is very messy.
 
 Installation
 ------------
-Tested with `rustc 0.13.0-nightly (7e43f419c 2014-11-15 13:22:24 +0000)`.
+Tested with `rustc 0.13.0-nightly (a31ad6bfc 2014-12-06 23:12:17 +0000)`.
 To build digital\_composer, run `cargo build`. The executable will be
 `target/digital_composer`.
 

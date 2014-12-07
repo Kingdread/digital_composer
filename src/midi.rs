@@ -1,5 +1,6 @@
 use std::{io, error, rand};
 use std::rand::distributions::{Range, IndependentSample};
+use self::MidiError::{InvalidFile, InvalidTrackNumber, IoError, UnknownError};
 type MidiTrack = Vec<u8>;
 
 #[deriving(Show)]
@@ -174,12 +175,12 @@ fn build_track_data(notes: &MidiTrack) -> Vec<u8> {
     let mut result = Vec::new();
     for note in notes.iter() {
         // Do everything on channel 1
-        result.push_all([0x00, 0x91, *note, 127]);
+        result.push_all(&[0x00, 0x91, *note, 127]);
         result.push(random_delta_time());
-        result.push_all([0x81, *note, 0]);
+        result.push_all(&[0x81, *note, 0]);
     }
     // Append End Of Track event
-    result.push_all([0xFF, 0x2F, 0x00]);
+    result.push_all(&[0xFF, 0x2F, 0x00]);
     result
 }
 
@@ -188,8 +189,8 @@ pub fn write_midi_file(writer: &mut Writer, notes: MidiTrack) -> io::IoResult<()
     //! the notes with random speed.
     // Write file header
     try!(writer.write_str("MThd"));
-    try!(writer.write([0x00, 0x00, 0x00, 0x06]));
-    try!(writer.write([0x00, 0x01, 0x00, 0x01, 0x00, 0x30]));
+    try!(writer.write(&[0x00, 0x00, 0x00, 0x06]));
+    try!(writer.write(&[0x00, 0x01, 0x00, 0x01, 0x00, 0x30]));
     // Write track header
     try!(writer.write_str("MTrk"));
     let track_data = build_track_data(&notes);

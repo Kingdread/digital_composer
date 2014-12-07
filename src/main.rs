@@ -1,6 +1,8 @@
 #![feature(macro_rules)]
 extern crate getopts;
-use getopts::{optopt, optflag, getopts, OptGroup, Yes, No, Maybe, Req, Multi, Optional};
+use getopts::{optopt, optflag, getopts, OptGroup, HasArg, Occur};
+use getopts::HasArg::{Yes, No, Maybe};
+use getopts::Occur::{Req, Optional, Multi};
 use markov::MarkovChain;
 use std::io;
 use std::os;
@@ -12,20 +14,21 @@ mod midi;
 fn print_errorstack(err: &Error) {
     //! Prints an error to stderr and the error that caused it, until
     //! error.cause() is None.
-    write!(io::stderr(), "Error: {}\n", err.description());
+    let stderr = &mut io::stderr();
+    write!(stderr, "Error: {}\n", err.description());
     match err.detail() {
         Some(detail) => {
-            write!(io::stderr(), "     {}\n", detail);
+            write!(stderr, "     {}\n", detail);
         },
         None => (),
     };
     let mut current = err.cause();
     while current.is_some() {
         let c = current.unwrap();
-        write!(io::stderr(), "Caused by: {}\n", c.description());
+        write!(stderr, "Caused by: {}\n", c.description());
         match c.detail() {
             Some(detail) => {
-                write!(io::stderr(), "     {}\n", detail);
+                write!(stderr, "     {}\n", detail);
             },
             None => (),
         };
@@ -119,7 +122,7 @@ fn main() {
     let matches = match getopts(os::args().tail(), opts) {
         Ok(m) => m,
         Err(err) => {
-            write!(io::stderr(), "{}\n", err);
+            write!(&mut io::stderr(), "{}\n", err);
             return;
         }
     };
