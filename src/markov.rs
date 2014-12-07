@@ -43,6 +43,6 @@ impl<T: Eq + Copy + Hash, U: Eq + Copy + Hash> MarkovChain<T, U> {
             }
             result -= *val;
         }
-        return None;
+        None
     }
 }

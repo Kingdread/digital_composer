@@ -22,7 +22,7 @@ impl error::Error for MidiError {
             InvalidFile(..) => "invalid MIDI file",
             InvalidTrackNumber(..) => "invalid track number",
             IoError(..) => "underlying IO error",
-            ref UnkownError => "unknown error",
+            UnknownError => "unknown error",
         }
     }
 
@@ -44,7 +44,13 @@ impl error::Error for MidiError {
 
 
 fn extract_varlen(input: &mut Reader) -> io::IoResult<uint> {
-    let mut nums: Vec<u8> = vec![];
+    //! Takes a reader and reads a MIDI varlen field. Advances the Reader
+    //! by the amount of bytes read and returns the read uint.
+    let mut nums: Vec<u8> = Vec::new();
+    // For example, the 3 bytes
+    //   0b11000000 0b10100000 0b00000001
+    // should end up as the int
+    //   0b100000001000000000001
     loop {
         let byte = try!(input.read_byte());
         nums.push(byte & 0b01111111);
@@ -60,10 +66,13 @@ fn extract_varlen(input: &mut Reader) -> io::IoResult<uint> {
 }
 
 fn get_track_notes(input: &mut Reader) -> Result<MidiTrack, MidiError> {
+    //! Reads the notes of a track. The Reader has to be positioned at the
+    //! first byte of the track and will read until it finds the END OF TRACK
+    //! event.
     let mut notes: MidiTrack = vec![];
     let mut last_event: u8 = 0;
     loop {
-        let delta_time = try!(extract_varlen(input));
+        try!(extract_varlen(input));
         let first_byte = try!(input.read_byte());
         let need_reuse = first_byte & 0x80 == 0;
         let type_and_channel = if need_reuse {
@@ -72,7 +81,6 @@ fn get_track_notes(input: &mut Reader) -> Result<MidiTrack, MidiError> {
             first_byte
         };
         let event_type = type_and_channel >> 4;
-        let channel = type_and_channel & 0b1111;
         let param_1 = if need_reuse {
             first_byte
         } else {
@@ -104,9 +112,13 @@ fn get_track_notes(input: &mut Reader) -> Result<MidiTrack, MidiError> {
             }
             // Note off, aftertouch, controller, pitch bend
             0x8 | 0xA | 0xB | 0xE => {
+                // They have a second param (one byte), so we need to
+                // read it
                 try!(input.read_byte());
             }
             // Program change, aftertouch
+            // those events don't have any more params and we don't need
+            // to handle them.
             0xC | 0xD => (),
             _ => (),
         }
@@ -117,6 +129,7 @@ fn get_track_notes(input: &mut Reader) -> Result<MidiTrack, MidiError> {
 }
 
 pub fn get_notes(input: &mut Reader, track_no: int) -> Result<MidiTrack, MidiError> {
+    //! Get the track with number track_no from the MIDI file given by input.
     let midi_header = try!(input.read_exact(4));
     if midi_header != vec![0x4D, 0x54, 0x68, 0x64] {
         return Err(InvalidFile("Invalid MIDI file header".to_string()))
@@ -140,21 +153,24 @@ pub fn get_notes(input: &mut Reader, track_no: int) -> Result<MidiTrack, MidiErr
         }
         let chunk_size = try!(input.read_be_u32());
         if tn != track_no {
+            // We just read and discard the track's data
             try!(input.read_exact(chunk_size as uint));
             continue
         }
         return get_track_notes(input);
     }
-    return Err(UnknownError);
+    Err(UnknownError)
 }
 
 fn random_delta_time() -> u8 {
+    //! Return a random delta time, used for writing the output file
     let range = Range::<u8>::new(15, 30);
     let mut rng = rand::task_rng();
-    return range.ind_sample(&mut rng);
+    range.ind_sample(&mut rng)
 }
 
 fn build_track_data(notes: &MidiTrack) -> Vec<u8> {
+    //! Build and return the events for a track (without the track header)
     let mut result = Vec::new();
     for note in notes.iter() {
         // Do everything on channel 1
@@ -162,10 +178,14 @@ fn build_track_data(notes: &MidiTrack) -> Vec<u8> {
         result.push(random_delta_time());
         result.push_all([0x81, *note, 0]);
     }
-    return result;
+    // Append End Of Track event
+    result.push_all([0xFF, 0x2F, 0x00]);
+    result
 }
 
 pub fn write_midi_file(writer: &mut Writer, notes: MidiTrack) -> io::IoResult<()> {
+    //! Takes a writer and some notes and writes a valid MIDI file, playing
+    //! the notes with random speed.
     // Write file header
     try!(writer.write_str("MThd"));
     try!(writer.write([0x00, 0x00, 0x00, 0x06]));
