@@ -1,6 +1,6 @@
 #![feature(macro_rules)]
 extern crate getopts;
-use getopts::{optopt, optflag, getopts, OptGroup, HasArg, Occur};
+use getopts::{optopt, optflag, getopts, OptGroup};
 use getopts::HasArg::{Yes, No, Maybe};
 use getopts::Occur::{Req, Optional, Multi};
 use markov::MarkovChain;
@@ -11,6 +11,7 @@ use std::hash::hash;
 mod markov;
 mod midi;
 
+#[allow(unused_must_use)]
 fn print_errorstack(err: &Error) {
     //! Prints an error to stderr and the error that caused it, until
     //! error.cause() is None.
@@ -122,7 +123,7 @@ fn main() {
     let matches = match getopts(os::args().tail(), opts) {
         Ok(m) => m,
         Err(err) => {
-            write!(&mut io::stderr(), "{}\n", err);
+            let _ = write!(&mut io::stderr(), "{}\n", err);
             return;
         }
     };
