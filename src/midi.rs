@@ -63,7 +63,7 @@ fn extract_varlen(input: &mut Reader) -> io::IoResult<uint> {
     for (i, byte) in nums.iter().rev().enumerate() {
         result |= *byte as uint << (i * 7)
     }
-    return Ok(result);
+    Ok(result)
 }
 
 fn get_track_notes(input: &mut Reader) -> Result<MidiTrack, MidiError> {
@@ -126,7 +126,7 @@ fn get_track_notes(input: &mut Reader) -> Result<MidiTrack, MidiError> {
 
         last_event = type_and_channel;
     }
-    return Ok(notes);
+    Ok(notes)
 }
 
 pub fn get_notes(input: &mut Reader, track_no: int) -> Result<MidiTrack, MidiError> {
@@ -180,7 +180,7 @@ fn build_track_data(notes: &MidiTrack) -> Vec<u8> {
         result.push_all(&[0x81, *note, 0]);
     }
     // Append End Of Track event
-    result.push_all(&[0xFF, 0x2F, 0x00]);
+    result.push_all(&[0x00, 0xFF, 0x2F, 0x00]);
     result
 }
 
