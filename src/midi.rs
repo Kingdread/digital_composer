@@ -1,7 +1,7 @@
 use std::{io, error, rand};
 use std::rand::distributions::{Range, IndependentSample};
 use self::MidiError::{InvalidFile, InvalidTrackNumber, IoError, UnknownError};
-type MidiTrack = Vec<u8>;
+pub type MidiTrack = Vec<u8>;
 
 #[deriving(Show)]
 enum MidiError {
@@ -184,17 +184,25 @@ fn build_track_data(notes: &MidiTrack) -> Vec<u8> {
     result
 }
 
-pub fn write_midi_file(writer: &mut Writer, notes: MidiTrack) -> io::IoResult<()> {
+pub fn write_midi_file(writer: &mut Writer, tracks: Vec<MidiTrack>) -> io::IoResult<()> {
     //! Takes a writer and some notes and writes a valid MIDI file, playing
     //! the notes with random speed.
     // Write file header
     try!(writer.write_str("MThd"));
+    // Header size (always 6)
     try!(writer.write(&[0x00, 0x00, 0x00, 0x06]));
-    try!(writer.write(&[0x00, 0x01, 0x00, 0x01, 0x00, 0x30]));
-    // Write track header
-    try!(writer.write_str("MTrk"));
-    let track_data = build_track_data(&notes);
-    try!(writer.write_be_u32(track_data.len() as u32));
-    try!(writer.write(track_data.as_slice()));
+    // MIDI format type
+    try!(writer.write(&[0x00, 0x01]));
+    // Number of tracks
+    try!(writer.write_be_u16(tracks.len() as u16));
+    // Time division
+    try!(writer.write(&[0x00, 0x30]));
+    for notes in tracks.iter() {
+        // Write track header
+        try!(writer.write_str("MTrk"));
+        let track_data = build_track_data(notes);
+        try!(writer.write_be_u32(track_data.len() as u32));
+        try!(writer.write(track_data.as_slice()));
+    }
     Ok(())
 }

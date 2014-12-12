@@ -4,6 +4,7 @@ extern crate serialize;
 extern crate docopt;
 #[phase(plugin)] extern crate docopt_macros;
 use markov::MarkovChain;
+use midi::MidiTrack;
 use std::io;
 use std::error::Error;
 use std::hash::hash;
@@ -88,6 +89,7 @@ fn main() {
     let input_trackno = args.arg_track;
     let degree = args.flag_degree;
     let length = args.flag_length;
+    let polyphonic = 1u;
 
     // Actual program
     println!("Reading {}...", input_filename);
@@ -100,7 +102,11 @@ fn main() {
         },
     };
 
-    let composition = compose(&notes, degree, length);
+    let mut composition = Vec::<MidiTrack>::new();
+    for _ in range(0, polyphonic) {
+        // TODO: Don't create the chain over and over again
+        composition.push(compose(&notes, degree, length));
+    }
 
     let mut output = std::io::File::create(&Path::new(output_filename));
     match midi::write_midi_file(&mut output, composition) {
