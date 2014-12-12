@@ -109,7 +109,7 @@ fn main() {
     }
 
     let mut output = std::io::File::create(&Path::new(output_filename));
-    match midi::write_midi_file(&mut output, composition) {
+    match midi::write_midi_file(&mut output, &composition) {
         Err(n) => {
             print_errorstack(&n);
             return;

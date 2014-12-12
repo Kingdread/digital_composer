@@ -184,7 +184,7 @@ fn build_track_data(notes: &MidiTrack) -> Vec<u8> {
     result
 }
 
-pub fn write_midi_file(writer: &mut Writer, tracks: Vec<MidiTrack>) -> io::IoResult<()> {
+pub fn write_midi_file(writer: &mut Writer, tracks: &Vec<MidiTrack>) -> io::IoResult<()> {
     //! Takes a writer and some notes and writes a valid MIDI file, playing
     //! the notes with random speed.
     // Write file header
