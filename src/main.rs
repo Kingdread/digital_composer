@@ -78,7 +78,7 @@ Options:
     arg_track: uint,
     flag_length: uint,
     flag_degree: uint,
-)
+);
 
 fn main() {
     // Argument parsing and validating

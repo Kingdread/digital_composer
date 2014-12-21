@@ -4,6 +4,5 @@ name = "digital_composer"
 version = "0.0.1"
 authors = ["Daniel <kingdread@gmx.de>"]
 
-[dependencies]
-docopt = "0.6.13"
-docopt_macros = "0.6.13"
+[dependencies.docopt_macros]
+git = "git://github.com/docopt/docopt.rs"
