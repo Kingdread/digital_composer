@@ -1,6 +1,6 @@
 #![feature(macro_rules)]
 #![feature(phase)]
-extern crate serialize;
+extern crate "rustc-serialize" as rustc_serialize;
 extern crate docopt;
 #[phase(plugin)] extern crate docopt_macros;
 use markov::MarkovChain;
