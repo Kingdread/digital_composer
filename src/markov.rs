@@ -35,7 +35,7 @@ impl<T: Eq + Copy + Hash, U: Eq + Copy + Hash> MarkovChain<T, U> {
             high += *i;
         };
         let range = Range::new(1u, high + 1);
-        let mut rng = rand::task_rng();
+        let mut rng = rand::thread_rng();
         let mut result = range.ind_sample(&mut rng);
         for (key, val) in suc_map.iter() {
             if *val <= result {

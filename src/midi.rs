@@ -166,7 +166,7 @@ pub fn get_notes(input: &mut Reader, track_no: int) -> Result<MidiTrack, MidiErr
 fn random_delta_time() -> u8 {
     //! Return a random delta time, used for writing the output file
     let range = Range::<u8>::new(15, 30);
-    let mut rng = rand::task_rng();
+    let mut rng = rand::thread_rng();
     range.ind_sample(&mut rng)
 }
 
