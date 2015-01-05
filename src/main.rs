@@ -1,4 +1,4 @@
-#![feature(macro_rules)]
+#![feature(old_orphan_check)]
 #![feature(phase)]
 extern crate "rustc-serialize" as rustc_serialize;
 extern crate docopt;
@@ -64,7 +64,7 @@ fn compose(notes: &Vec<u8>, degree: uint, length: uint) -> Vec<u8> {
 }
 
 
-docopt!(Args deriving Show, "
+docopt!(Args derive Show, "
 Usage:
     digital_composer [options] <input> <track>
     digital_composer --help

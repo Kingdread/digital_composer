@@ -61,7 +61,7 @@ fn extract_varlen(input: &mut Reader) -> io::IoResult<uint> {
     }
     let mut result = 0u;
     for (i, byte) in nums.iter().rev().enumerate() {
-        result |= *byte as uint << (i * 7)
+        result |= (*byte as uint) << (i * 7)
     }
     Ok(result)
 }
