@@ -3,7 +3,7 @@ use std::hash::Hash;
 use std::rand;
 use std::rand::distributions::{IndependentSample, Range};
 
-#[deriving(Show)]
+#[derive(Show)]
 pub struct MarkovChain<T: Eq + Copy + Hash, U: Eq + Copy + Hash> {
     chain: HashMap<T, HashMap<U, uint>>,
 }

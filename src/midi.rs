@@ -3,7 +3,7 @@ use std::rand::distributions::{Range, IndependentSample};
 use self::MidiError::{InvalidFile, InvalidTrackNumber, IoError, UnknownError};
 pub type MidiTrack = Vec<u8>;
 
-#[deriving(Show)]
+#[derive(Show)]
 enum MidiError {
     InvalidFile(String),
     InvalidTrackNumber(int),
