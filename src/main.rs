@@ -1,13 +1,13 @@
-#![feature(old_orphan_check)]
-#![feature(phase)]
+#![feature(plugin)]
+#![feature(io, core, collections, path, rand, hash)]
 extern crate "rustc-serialize" as rustc_serialize;
 extern crate docopt;
-#[phase(plugin)] extern crate docopt_macros;
+#[plugin] #[no_link] extern crate docopt_macros;
 use markov::MarkovChain;
 use midi::MidiTrack;
-use std::io;
+use std::old_io as io;
 use std::error::Error;
-use std::hash::hash;
+use std::hash::{hash, SipHasher};
 mod markov;
 mod midi;
 
@@ -16,42 +16,34 @@ fn print_errorstack(err: &Error) {
     //! Prints an error to stderr and the error that caused it, until
     //! error.cause() is None.
     let stderr = &mut io::stderr();
-    write!(stderr, "Error: {}\n", err.description());
-    match err.detail() {
-        Some(detail) => {
-            write!(stderr, "     {}\n", detail);
-        },
-        None => (),
-    };
+    write!(stderr, "Error: {}\n    {}\n", err.description(), err);
     let mut current = err.cause();
     while current.is_some() {
         let c = current.unwrap();
-        write!(stderr, "Caused by: {}\n", c.description());
-        match c.detail() {
-            Some(detail) => {
-                write!(stderr, "     {}\n", detail);
-            },
-            None => (),
-        };
+        write!(stderr, "Caused by: {}\n    {}\n", c.description(), c);
         current = c.cause();
     }
 }
 
-fn compose(notes: &Vec<u8>, degree: uint, length: uint) -> Vec<u8> {
+fn get_hash(inp: &Vec<u8>) -> u64 {
+    return hash::<Vec<u8>, SipHasher>(inp);
+}
+
+fn compose(notes: &Vec<u8>, degree: u32, length: u32) -> Vec<u8> {
     //! Takes an original sequence of notes and creates a new composition
     let mut m = MarkovChain::<u64, u8>::new();
     let mut last_note = Vec::new();
-    for i in range(0, degree) {
+    for i in range(0us, degree as usize) {
         last_note.push(notes[i])
     }
-    for note in notes.iter().skip(degree) {
-        m.mark(hash(&last_note), *note);
+    for note in notes.iter().skip(degree as usize) {
+        m.mark(get_hash(&last_note), *note);
         last_note.remove(0);
         last_note.push(*note);
     }
     let mut composition = Vec::<u8>::new();
-    while composition.len() != length {
-        match m.random_successor(hash(&last_note)) {
+    while composition.len() != length as usize {
+        match m.random_successor(get_hash(&last_note)) {
             Some(note) => {
                 composition.push(note);
                 last_note.remove(0);
@@ -64,7 +56,7 @@ fn compose(notes: &Vec<u8>, degree: uint, length: uint) -> Vec<u8> {
 }
 
 
-docopt!(Args derive Show, "
+docopt!(Args derive Debug, "
 Usage:
     digital_composer [options] <input> <track>
     digital_composer --help
@@ -75,9 +67,9 @@ Options:
     -l <len>, --length <len>    Specify the length in notes [default: 100]
     -d <deg>, --degree <deg>    Specify the degree of the markov chain [default: 1]
 ",
-    arg_track: uint,
-    flag_length: uint,
-    flag_degree: uint,
+    arg_track: u16,
+    flag_length: u32,
+    flag_degree: u32,
 );
 
 fn main() {
@@ -89,12 +81,12 @@ fn main() {
     let input_trackno = args.arg_track;
     let degree = args.flag_degree;
     let length = args.flag_length;
-    let polyphonic = 1u;
+    let polyphonic = 1u32;
 
     // Actual program
     println!("Reading {}...", input_filename);
-    let mut file = std::io::File::open(&Path::new(input_filename));
-    let notes = match midi::get_notes(&mut file, input_trackno as int) {
+    let mut file = io::File::open(&Path::new(input_filename));
+    let notes = match midi::get_notes(&mut file, input_trackno) {
         Ok(n) => n,
         Err(n) => {
             print_errorstack(&n);
@@ -108,7 +100,7 @@ fn main() {
         composition.push(compose(&notes, degree, length));
     }
 
-    let mut output = std::io::File::create(&Path::new(output_filename));
+    let mut output = io::File::create(&Path::new(output_filename));
     match midi::write_midi_file(&mut output, &composition) {
         Err(n) => {
             print_errorstack(&n);

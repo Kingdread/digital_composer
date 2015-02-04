@@ -1,14 +1,17 @@
 use std::collections::HashMap;
+use std::collections::hash_map::Hasher;
 use std::hash::Hash;
 use std::rand;
 use std::rand::distributions::{IndependentSample, Range};
 
-#[derive(Show)]
-pub struct MarkovChain<T: Eq + Copy + Hash, U: Eq + Copy + Hash> {
-    chain: HashMap<T, HashMap<U, uint>>,
+pub struct MarkovChain<T, U> {
+    chain: HashMap<T, HashMap<U, u32>>,
 }
 
-impl<T: Eq + Copy + Hash, U: Eq + Copy + Hash> MarkovChain<T, U> {
+impl<T, U> MarkovChain<T, U>
+where T: Copy + Eq + Hash<Hasher>,
+      U: Copy + Eq + Hash<Hasher>
+{
     pub fn new() -> MarkovChain<T, U> {
         MarkovChain{ chain: HashMap::new() }
     }
@@ -30,11 +33,11 @@ impl<T: Eq + Copy + Hash, U: Eq + Copy + Hash> MarkovChain<T, U> {
             Some(m) => m,
             None => return None,
         };
-        let mut high = 0u;
+        let mut high = 0;
         for i in suc_map.values() {
             high += *i;
         };
-        let range = Range::new(1u, high + 1);
+        let range = Range::new(1, high + 1);
         let mut rng = rand::thread_rng();
         let mut result = range.ind_sample(&mut rng);
         for (key, val) in suc_map.iter() {

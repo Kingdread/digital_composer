@@ -1,12 +1,14 @@
-use std::{io, error, rand};
+use std::{error, rand};
+use std::old_io as io;
+use std::fmt;
 use std::rand::distributions::{Range, IndependentSample};
 use self::MidiError::{InvalidFile, InvalidTrackNumber, IoError, UnknownError};
 pub type MidiTrack = Vec<u8>;
 
-#[derive(Show)]
+#[derive(Debug)]
 enum MidiError {
     InvalidFile(String),
-    InvalidTrackNumber(int),
+    InvalidTrackNumber(u16),
     IoError(io::IoError),
     UnknownError,
 }
@@ -27,14 +29,6 @@ impl error::Error for MidiError {
         }
     }
 
-    fn detail(&self) -> Option<String> {
-        match *self {
-            InvalidFile(ref t) => Some(t.clone()),
-            InvalidTrackNumber(nr) => Some(format!("The file has no track {}", nr)),
-            _ => None,
-        }
-    }
-
     fn cause(&self) -> Option<&error::Error> {
         match *self {
             IoError(ref e) => Some(e as &error::Error),
@@ -43,8 +37,18 @@ impl error::Error for MidiError {
     }
 }
 
+impl fmt::Display for MidiError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        match *self {
+            InvalidFile(ref t) => f.write_str(t),
+            InvalidTrackNumber(nr) => f.write_fmt(format_args!("The file has no track {}", nr)),
+            _ => Ok(()),
+        }
+    }
+}
 
-fn extract_varlen(input: &mut Reader) -> io::IoResult<uint> {
+
+fn extract_varlen(input: &mut Reader) -> io::IoResult<u32> {
     //! Takes a reader and reads a MIDI varlen field. Advances the Reader
     //! by the amount of bytes read and returns the read uint.
     let mut nums: Vec<u8> = Vec::new();
@@ -59,9 +63,9 @@ fn extract_varlen(input: &mut Reader) -> io::IoResult<uint> {
             break
         }
     }
-    let mut result = 0u;
+    let mut result = 0u32;
     for (i, byte) in nums.iter().rev().enumerate() {
-        result |= (*byte as uint) << (i * 7)
+        result |= (*byte as u32) << (i * 7)
     }
     Ok(result)
 }
@@ -91,7 +95,7 @@ fn get_track_notes(input: &mut Reader) -> Result<MidiTrack, MidiError> {
         if type_and_channel == 0xFF {
             let meta_length = try!(extract_varlen(input));
             // Skip meta data
-            try!(input.read_exact(meta_length));
+            try!(input.read_exact(meta_length as usize));
             // End of track event
             if param_1 == 0x2F {
                 break;
@@ -101,7 +105,7 @@ fn get_track_notes(input: &mut Reader) -> Result<MidiTrack, MidiError> {
         else if event_type == 0xF {
             let sysex_length = try!(extract_varlen(input));
             // Skip it
-            try!(input.read_exact(sysex_length));
+            try!(input.read_exact(sysex_length as usize));
         }
         match event_type {
             // Note on
@@ -129,7 +133,7 @@ fn get_track_notes(input: &mut Reader) -> Result<MidiTrack, MidiError> {
     Ok(notes)
 }
 
-pub fn get_notes(input: &mut Reader, track_no: int) -> Result<MidiTrack, MidiError> {
+pub fn get_notes(input: &mut Reader, track_no: u16) -> Result<MidiTrack, MidiError> {
     //! Get the track with number track_no from the MIDI file given by input.
     let midi_header = try!(input.read_exact(4));
     if midi_header != vec![0x4D, 0x54, 0x68, 0x64] {
@@ -139,7 +143,7 @@ pub fn get_notes(input: &mut Reader, track_no: int) -> Result<MidiTrack, MidiErr
     try!(input.read_exact(4));
     // Skip format type
     try!(input.read_exact(2));
-    let number_of_tracks = try!(input.read_be_u16()) as int;
+    let number_of_tracks = try!(input.read_be_u16());
     if track_no >= number_of_tracks {
         return Err(InvalidTrackNumber(track_no))
     }
@@ -155,7 +159,7 @@ pub fn get_notes(input: &mut Reader, track_no: int) -> Result<MidiTrack, MidiErr
         let chunk_size = try!(input.read_be_u32());
         if tn != track_no {
             // We just read and discard the track's data
-            try!(input.read_exact(chunk_size as uint));
+            try!(input.read_exact(chunk_size as usize));
             continue
         }
         return get_track_notes(input);
@@ -190,19 +194,19 @@ pub fn write_midi_file(writer: &mut Writer, tracks: &Vec<MidiTrack>) -> io::IoRe
     // Write file header
     try!(writer.write_str("MThd"));
     // Header size (always 6)
-    try!(writer.write(&[0x00, 0x00, 0x00, 0x06]));
+    try!(writer.write_all(&[0x00, 0x00, 0x00, 0x06]));
     // MIDI format type
-    try!(writer.write(&[0x00, 0x01]));
+    try!(writer.write_all(&[0x00, 0x01]));
     // Number of tracks
     try!(writer.write_be_u16(tracks.len() as u16));
     // Time division
-    try!(writer.write(&[0x00, 0x30]));
+    try!(writer.write_all(&[0x00, 0x30]));
     for notes in tracks.iter() {
         // Write track header
         try!(writer.write_str("MTrk"));
         let track_data = build_track_data(notes);
         try!(writer.write_be_u32(track_data.len() as u32));
-        try!(writer.write(track_data.as_slice()));
+        try!(writer.write_all(track_data.as_slice()));
     }
     Ok(())
 }
