@@ -1,7 +1,8 @@
-use std::{error, rand};
+extern crate rand;
+use std::error;
 use std::old_io as io;
 use std::fmt;
-use std::rand::distributions::{Range, IndependentSample};
+use rand::distributions::{Range, IndependentSample};
 use self::MidiError::{InvalidFile, InvalidTrackNumber, IoError, UnknownError};
 pub type MidiTrack = Vec<u8>;
 

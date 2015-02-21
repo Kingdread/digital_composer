@@ -1,7 +1,7 @@
+extern crate rand;
 use std::collections::HashMap;
 use std::hash::Hash;
-use std::rand;
-use std::rand::distributions::{IndependentSample, Range};
+use rand::distributions::{IndependentSample, Range};
 
 pub struct MarkovChain<T, U> {
     chain: HashMap<T, HashMap<U, u32>>,

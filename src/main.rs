@@ -1,8 +1,9 @@
 #![feature(plugin)]
-#![feature(io, core, collections, path, rand, hash)]
+#![feature(old_io, core, collections, old_path, hash)]
 #![plugin(docopt_macros)]
 extern crate "rustc-serialize" as rustc_serialize;
 extern crate docopt;
+extern crate rand;
 use markov::MarkovChain;
 use midi::MidiTrack;
 use std::old_io as io;
