@@ -1,8 +1,8 @@
 #![feature(plugin)]
 #![feature(io, core, collections, path, rand, hash)]
+#![plugin(docopt_macros)]
 extern crate "rustc-serialize" as rustc_serialize;
 extern crate docopt;
-#[plugin] #[no_link] extern crate docopt_macros;
 use markov::MarkovChain;
 use midi::MidiTrack;
 use std::old_io as io;
@@ -33,8 +33,8 @@ fn compose(notes: &Vec<u8>, degree: u32, length: u32) -> Vec<u8> {
     //! Takes an original sequence of notes and creates a new composition
     let mut m = MarkovChain::<u64, u8>::new();
     let mut last_note = Vec::new();
-    for i in range(0us, degree as usize) {
-        last_note.push(notes[i])
+    for i in range(0u32, degree) {
+        last_note.push(notes[i as usize])
     }
     for note in notes.iter().skip(degree as usize) {
         m.mark(get_hash(&last_note), *note);

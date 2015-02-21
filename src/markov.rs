@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::collections::hash_map::Hasher;
 use std::hash::Hash;
 use std::rand;
 use std::rand::distributions::{IndependentSample, Range};
@@ -9,8 +8,8 @@ pub struct MarkovChain<T, U> {
 }
 
 impl<T, U> MarkovChain<T, U>
-where T: Copy + Eq + Hash<Hasher>,
-      U: Copy + Eq + Hash<Hasher>
+where T: Copy + Eq + Hash,
+      U: Copy + Eq + Hash
 {
     pub fn new() -> MarkovChain<T, U> {
         MarkovChain{ chain: HashMap::new() }
