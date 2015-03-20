@@ -69,8 +69,15 @@ trait ByteReader : Read {
     }
 
     fn read_exact(&mut self, length: usize) -> io::Result<Vec<u8>> {
-        let mut buffer = Vec::<u8>::with_capacity(length);
-        try!(self.read(&mut buffer));
+        let mut buffer = vec![0; length];
+        let mut bytes_read = 0usize;
+        while bytes_read < length {
+            match self.read(&mut buffer[bytes_read..]) {
+                Ok(0) => return Err(io::Error::new(io::ErrorKind::Other, "Unexpected EOF", None)),
+                Ok(n) => bytes_read += n,
+                Err(e) => return Err(e),
+            }
+        }
         Ok(buffer)
     }
 }
