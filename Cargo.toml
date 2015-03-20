@@ -6,6 +6,8 @@ authors = ["Daniel <kingdread@gmx.de>"]
 
 
 [dependencies]
+byteorder = "*"
 docopt = "*"
 docopt_macros = "*"
+rand = "*"
 rustc-serialize = "*"

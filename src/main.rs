@@ -1,12 +1,16 @@
 #![feature(plugin)]
-#![feature(old_io, core, collections, old_path, hash)]
+#![feature(core, collections, hash)]
 #![plugin(docopt_macros)]
 extern crate "rustc-serialize" as rustc_serialize;
+extern crate byteorder;
 extern crate docopt;
 extern crate rand;
 use markov::MarkovChain;
 use midi::MidiTrack;
-use std::old_io as io;
+use std::fs;
+use std::io;
+use std::io::Write;
+use std::path::Path;
 use std::error::Error;
 use std::hash::{hash, SipHasher};
 mod markov;
@@ -34,7 +38,7 @@ fn compose(notes: &Vec<u8>, degree: u32, length: u32) -> Vec<u8> {
     //! Takes an original sequence of notes and creates a new composition
     let mut m = MarkovChain::<u64, u8>::new();
     let mut last_note = Vec::new();
-    for i in range(0u32, degree) {
+    for i in (0u32 .. degree) {
         last_note.push(notes[i as usize])
     }
     for note in notes.iter().skip(degree as usize) {
@@ -86,7 +90,13 @@ fn main() {
 
     // Actual program
     println!("Reading {}...", input_filename);
-    let mut file = io::File::open(&Path::new(input_filename));
+    let mut file = match fs::File::open(&Path::new(&input_filename)) {
+        Ok(f) => f,
+        Err(e) => {
+            print_errorstack(&e);
+            return;
+        }
+    };
     let notes = match midi::get_notes(&mut file, input_trackno) {
         Ok(n) => n,
         Err(n) => {
@@ -96,12 +106,18 @@ fn main() {
     };
 
     let mut composition = Vec::<MidiTrack>::new();
-    for _ in range(0, polyphonic) {
+    for _ in (0 .. polyphonic) {
         // TODO: Don't create the chain over and over again
         composition.push(compose(&notes, degree, length));
     }
 
-    let mut output = io::File::create(&Path::new(output_filename));
+    let mut output = match fs::File::create(&Path::new(&output_filename)) {
+        Ok(f) => f,
+        Err(e) => {
+            print_errorstack(&e);
+            return;
+        }
+    };
     match midi::write_midi_file(&mut output, &composition) {
         Err(n) => {
             print_errorstack(&n);
