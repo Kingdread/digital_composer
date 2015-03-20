@@ -76,7 +76,7 @@ trait ByteReader : Read {
 }
 impl<T: Read + ?Sized> ByteReader for T {}
 
-fn extract_varlen(input: &mut Read) -> io::Result<u32> {
+fn extract_varlen<R: Read>(input: &mut R) -> io::Result<u32> {
     //! Takes a reader and reads a MIDI varlen field. Advances the Reader
     //! by the amount of bytes read and returns the read uint.
     let mut nums: Vec<u8> = Vec::new();
@@ -98,7 +98,7 @@ fn extract_varlen(input: &mut Read) -> io::Result<u32> {
     Ok(result)
 }
 
-fn get_track_notes(input: &mut Read) -> Result<MidiTrack, MidiError> {
+fn get_track_notes<R: Read>(input: &mut R) -> Result<MidiTrack, MidiError> {
     //! Reads the notes of a track. The Reader has to be positioned at the
     //! first byte of the track and will read until it finds the END OF TRACK
     //! event.
@@ -161,7 +161,7 @@ fn get_track_notes(input: &mut Read) -> Result<MidiTrack, MidiError> {
     Ok(notes)
 }
 
-pub fn get_notes(input: &mut Read, track_no: u16) -> Result<MidiTrack, MidiError> {
+pub fn get_notes<R: Read>(input: &mut R, track_no: u16) -> Result<MidiTrack, MidiError> {
     //! Get the track with number track_no from the MIDI file given by input.
     let midi_header = try!(input.read_exact(4));
     if midi_header != vec![0x4D, 0x54, 0x68, 0x64] {
@@ -216,7 +216,7 @@ fn build_track_data(notes: &MidiTrack) -> Vec<u8> {
     result
 }
 
-pub fn write_midi_file(writer: &mut Write, tracks: &Vec<MidiTrack>) -> io::Result<()> {
+pub fn write_midi_file<W: Write>(writer: &mut W, tracks: &Vec<MidiTrack>) -> io::Result<()> {
     //! Takes a writer and some notes and writes a valid MIDI file, playing
     //! the notes with random speed.
     // Write file header
